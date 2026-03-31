@@ -13,7 +13,7 @@ on:
 jobs:
   build:
 
-    runs-on: self-hosted # ubuntu-latest
+    runs-on: windows-latest #self-hosted # ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -25,6 +25,7 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
+    
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.6.2
       with:
@@ -34,3 +35,35 @@ jobs:
         path: .
         # The desired behavior if no files are found using the provided path.
 
+    - name: "Install Required Tools"
+        run: |
+          dotnet new tool-manifest
+          dotnet tool install dotnet-reportgenerator-globaltool
+          dotnet tool install dotnet-coverage
+    - name: Run the unit tests with code coverage
+      run: dotnet coverage collect dotnet test --filter TodoApiTests --output ${{ github.workspace }}/Tests/Coverage.cobertura.xml --output-format cobertura
+    - name: Generate Report
+      run: |
+        dotnet reportgenerator -reports:${{ github.workspace }}/Tests/Coverage.cobertura.xml -targetdir:"${{ github.workspace }}/Tests/coveragereport" -reporttypes:"MarkdownSummary;Html" -assemblyfilters:+MinimalApi
+    - name: Upload code coverage report
+      uses: actions/upload-artifact@v4.6.0
+      with:
+        name: coveragereport
+        path: ${{ github.workspace }}/Tests/coveragereport
+        
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: ${{ github.workspace }}/Tests/coveragereport/Summary.md
+
+    - name: Configuring Tokens
+      working-directory: ./Source
+      run: |
+        echo "USER1_TOKEN=$(dotnet user-jwts create --claim Username=user1 --claim Email=user1@example.com --name user1 --output token)" >> $GITHUB_ENV
+        echo "USER2_TOKEN=$(dotnet user-jwts create --claim Username=user2 --claim Email=user2@example.com --name user2 --output token)" >> $GITHUB_ENV
+    
+    - name: Running Integration Tests
+      run: dotnet test --filter TodoApiIntegrationTests
+      
