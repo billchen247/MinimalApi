@@ -36,7 +36,7 @@ jobs:
         # The desired behavior if no files are found using the provided path.
 
     - name: "Install Required Tools"
-        run: |
+      run: |
           dotnet new tool-manifest
           dotnet tool install dotnet-reportgenerator-globaltool
           dotnet tool install dotnet-coverage
