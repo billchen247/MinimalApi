@@ -45,6 +45,7 @@ steps:
   inputs:
     codeCoverageTool: Cobertura
     summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    reportDirectory: '$(Build.ArtifactStagingDirectory)/CoverageReport'
     
 - powershell: |
     [xml]$csproj = Get-Content "Source/MinimalApi.csproj"
@@ -98,5 +99,5 @@ steps:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'internal'
-    publishVstsFeed: '8652216f-33ec-4cc4-912f-2fdda6d93168/ec7dd365-d6f2-4c11-a4e2-b5de5e9034c0'
+    publishVstsFeed: c9f2b76d-54b1-4410-b1d0-876ea67ed0ad # comp367demofeeds
 
