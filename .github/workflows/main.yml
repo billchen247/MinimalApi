@@ -85,4 +85,4 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Github Container registry
-        run: docker push ghcr.io/anuraj/minimalapi:${{ env.BUILD_VERSION }}
+        run: docker push ghcr.io/billchen247/minimalapi:${{ env.BUILD_VERSION }}
