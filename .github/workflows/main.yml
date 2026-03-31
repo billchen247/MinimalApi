@@ -80,9 +80,9 @@ jobs:
       - name: Login with Github Container registry
         uses: docker/login-action@v3.3.0
         with:
-          registry: ghcr.io
+          registry: docker.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Github Container registry
-        run: docker push ghcr.io/anuraj/minimalapi:${{ env.BUILD_VERSION }}
+        run: docker push  docker.io/billchen247/minimalapi:${{ env.BUILD_VERSION }}
