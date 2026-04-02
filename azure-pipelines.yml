@@ -55,7 +55,14 @@ steps:
     codeCoverageTool: Cobertura
     summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
     reportDirectory: '$(Build.ArtifactStagingDirectory)/CoverageReport'
-    
+  displayName: Publish Code Coverage Report
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/CoverageReport'
+    ArtifactName: 'CoverageReport'
+  displayName: Publish HTML code coverage report
+
 - powershell: |
     [xml]$csproj = Get-Content "Source/MinimalApi.csproj"
     $packageId = $csproj.Project.PropertyGroup.PackageId
