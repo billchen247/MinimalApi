@@ -40,10 +40,20 @@ steps:
     command: test
     arguments: '--configuration Release --collect:"XPlat Code Coverage" --filter TodoApiTests '
 
+- script: |
+    dotnet tool install --global dotnet-reportgenerator-globaltool
+    echo %USERPROFILE%\.dotnet\tools >> %PATH%
+
+    reportgenerator ^
+      -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml ^
+      -targetdir:$(Build.ArtifactStagingDirectory)/CoverageReport ^
+      -reporttypes:Html
+  displayName: Generate HTML Report
+  
 - task: PublishCodeCoverageResults@2
   inputs:
     codeCoverageTool: Cobertura
-    summaryFileLocation: '$(Build.ArtifactStagingDirectory)/**/coverage.cobertura.xml'
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
     reportDirectory: '$(Build.ArtifactStagingDirectory)/CoverageReport'
     
 - powershell: |
