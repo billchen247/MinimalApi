@@ -7,7 +7,7 @@ using MinimalApi.ViewModels;
 
 namespace MinimalApi.Tests;
 
-public class TodoApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+public class TodoApiIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _httpClient;
 
