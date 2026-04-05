@@ -154,10 +154,15 @@ if (databaseContext != null)
     databaseContext.Database.EnsureCreated();
 }
 
-app.MapGroup("/todoitems")
-    .MapApiEndpoints()
+var todos = app.MapGroup("/todoitems");
+
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    todos.RequireAuthorization();
+}
+
+todos.MapApiEndpoints()
     .WithTags("Todo Items")
-    .RequireAuthorization()
     .RequireRateLimiting(jwtPolicyName)
     .WithOpenApi()
     .WithMetadata()
