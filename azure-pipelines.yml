@@ -29,6 +29,22 @@ steps:
     projects: '**/*.csproj'
 
 # ---------------------------
+# Build & Test
+# ---------------------------
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+    
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: '**/*Tests/*.csproj'
+    arguments: '--configuration Release --collect:"XPlat Code Coverage" --filter TodoApiTests '
+
+# ---------------------------
 # SonarCloud Prepare
 # ---------------------------
 - task: SonarCloudPrepare@4
@@ -43,20 +59,6 @@ steps:
       sonar.coverageReportPaths=$(Agent.TempDirectory)/**/coverage.cobertura.xml
   condition: succeeded()  # Only run if previous steps succeed
 
-# ---------------------------
-# Build & Test
-# ---------------------------
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-- task: DotNetCoreCLI@2
-  inputs:
-    command: test
-    arguments: '--configuration Release --collect:"XPlat Code Coverage" --filter TodoApiTests '
-    
 # ---------------------------
 # Generate Coverage Report
 # ---------------------------
