@@ -28,21 +28,6 @@ steps:
     command: 'restore'
     projects: '**/*.csproj'
 
-# ---------------------------
-# Build & Test
-# ---------------------------
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    
-- task: DotNetCoreCLI@2
-  inputs:
-    command: test
-    projects: '**/*Tests/*.csproj'
-    arguments: '--configuration Release --collect:"XPlat Code Coverage" --filter TodoApiTests '
 
 # ---------------------------
 # SonarCloud Prepare
@@ -58,6 +43,22 @@ steps:
     extraProperties: |
       sonar.coverageReportPaths=$(Agent.TempDirectory)/**/coverage.cobertura.xml
   condition: succeeded()  # Only run if previous steps succeed
+
+# ---------------------------
+# Build & Test
+# ---------------------------
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+    
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: '**/*Tests/*.csproj'
+    arguments: '--configuration Release --collect:"XPlat Code Coverage"  /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura '
 
 # ---------------------------
 # Generate Coverage Report
