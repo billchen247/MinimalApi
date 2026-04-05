@@ -37,7 +37,7 @@ steps:
     SonarCloud: 'sonarqubecloud'          # Your SonarCloud service connection
     organization: 'billchen247'         # SonarCloud org key
     scannerMode: 'MSBuild'
-    projectKey: 'com.training.example:MinimalApi'
+    projectKey: 'MinimalApi'
     projectName: 'MinimalApi'
     extraProperties: |
       sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/coverage.opencover.xml
