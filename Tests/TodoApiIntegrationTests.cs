@@ -11,7 +11,7 @@ public class TodoApiIntegrationTests : IClassFixture<CustomWebApplicationFactory
 {
     private readonly HttpClient _httpClient;
 
-    public TodoApiIntegrationTests(WebApplicationFactory<Program> factory)
+    public TodoApiIntegrationTests(CustomWebApplicationFactory factory)
     {
         _httpClient = factory.CreateClient();
     }
