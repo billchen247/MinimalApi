@@ -36,7 +36,7 @@ steps:
   inputs:
     SonarCloud: 'sonarqubecloud'          # Your SonarCloud service connection
     organization: 'billchen247'         # SonarCloud org key
-    scannerMode: 'MSBuild'
+    scannerMode: 'dotnet'                 # Changed from MSBuild -> dotnet
     projectKey: 'MinimalApi'
     projectName: 'MinimalApi'
     extraProperties: |
