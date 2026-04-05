@@ -82,8 +82,12 @@ builder.Services.AddApiVersioning(options =>
     options.ApiVersionReader = new HeaderApiVersionReader("api-version");
 });
 
+// 👇 Only enable auth if NOT testing
+if (!builder.Environment.IsEnvironment("Testing"))
+{
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication("Bearer").AddJwtBearer();
+}
 builder.Services.AddDbContextFactory<TodoDbContext>(options => options.UseInMemoryDatabase($"MinimalApiDb-{Guid.NewGuid()}"));
 
 builder.Services.AddEndpointsApiExplorer();
@@ -183,8 +187,12 @@ app.MapGet("/health", async (HealthCheckService healthCheckService) =>
 
 app.UseRouting();
 app.UseRateLimiter();
+// 👇 Only use auth middleware if NOT testing
+if (!app.Environment.IsEnvironment("Testing"))
+{
 app.UseAuthentication();
 app.UseAuthorization();
+}
 
 app.Run();
 
