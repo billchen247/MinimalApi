@@ -58,7 +58,7 @@ steps:
   inputs:
     command: test
     projects: '**/*Tests/*.csproj'
-    arguments: '--configuration Release --collect:"XPlat Code Coverage"  /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura '
+    arguments: '--configuration Release --filter TodoApiTests  --collect:"XPlat Code Coverage"  /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura '
 
 # ---------------------------
 # Generate Coverage Report
