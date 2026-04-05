@@ -28,7 +28,24 @@ steps:
     command: 'restore'
     projects: '**/*.csproj'
 
+# ---------------------------
+# SonarCloud Prepare
+# ---------------------------
+- task: SonarCloudPrepare@4
+  displayName: 'Prepare SonarCloud Analysis'
+  inputs:
+    SonarCloud: 'sonarqubecloud'          # Your SonarCloud service connection
+    organization: 'billchen247'         # SonarCloud org key
+    scannerMode: 'MSBuild'
+    projectKey: 'com.training.example:MinimalApi'
+    projectName: 'MinimalApi'
+    extraProperties: |
+      sonar.cs.opencover.reportsPaths=$(Agent.TempDirectory)/**/coverage.opencover.xml
+  condition: succeeded()  # Only run if previous steps succeed
 
+# ---------------------------
+# Build & Test
+# ---------------------------
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
@@ -39,7 +56,10 @@ steps:
   inputs:
     command: test
     arguments: '--configuration Release --collect:"XPlat Code Coverage" --filter TodoApiTests '
-
+    
+# ---------------------------
+# Generate Coverage Report
+# ---------------------------
 - script: |
     dotnet tool install --global dotnet-reportgenerator-globaltool
     echo %USERPROFILE%\.dotnet\tools >> %PATH%
@@ -63,6 +83,9 @@ steps:
     ArtifactName: 'CoverageReport'
   displayName: Publish HTML code coverage report
 
+# ---------------------------
+# Extract Artifact Info
+# ---------------------------
 - powershell: |
     [xml]$csproj = Get-Content "Source/MinimalApi.csproj"
     $packageId = $csproj.Project.PropertyGroup.PackageId
@@ -81,7 +104,9 @@ steps:
     Write-Host "##vso[task.setvariable variable=artifactFullName]$artifactFullName"
   displayName: 'Extract & Print Artifact Name and Version'
 
-    
+# ---------------------------
+# Publish Symbols
+# ---------------------------
 - task: PublishSymbols@2
   displayName: Publish symbols path
   continueOnError: True
@@ -90,6 +115,9 @@ steps:
     PublishSymbols: false
     SymbolServerType: TeamServices
     
+# ---------------------------
+# Publish Build Artifacts
+# ---------------------------
 - task: PublishBuildArtifacts@1
   displayName: Publish Artifact
   condition: succeededOrFailed()
@@ -97,7 +125,19 @@ steps:
     PathtoPublish: $(Build.ArtifactStagingDirectory)
     ArtifactName: $(artifactFullName)  # ✅ Includes version
     TargetPath: '\\my\share\$(Build.DefinitionName)\$(Build.BuildNumber)_$(artifactFullName)'  # ✅ Versioned target path
-    
+
+# ---------------------------
+# SonarCloud Analyze & Publish
+# ---------------------------
+- task: SonarCloudAnalyze@4
+  displayName: 'Run SonarCloud Analysis'
+  condition: succeeded()
+
+- task: SonarCloudPublish@4
+  displayName: 'Publish SonarCloud Results'
+  inputs:
+    pollingTimeoutSec: '300'
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))  # Skip for forked PRs
 
 # ✅ Fix: Specify output directory for .nupkg files
 - task: DotNetCoreCLI@2
