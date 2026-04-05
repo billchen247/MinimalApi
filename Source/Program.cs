@@ -188,7 +188,19 @@ app.MapGet("/health", async (HealthCheckService healthCheckService) =>
 app.UseRouting();
 app.UseRateLimiter();
 // 👇 Only use auth middleware if NOT testing
-if (!app.Environment.IsEnvironment("Testing"))
+if (app.Environment.IsEnvironment("Testing"))
+{
+    app.Use(async (context, next) =>
+    {
+        // Inject a fake authenticated user
+        var claims = new[] { new Claim(ClaimTypes.Name, "TestUser") };
+        var identity = new ClaimsIdentity(claims, "FakeAuth");
+        context.User = new ClaimsPrincipal(identity);
+
+        await next();
+    });
+}
+else
 {
 app.UseAuthentication();
 app.UseAuthorization();
