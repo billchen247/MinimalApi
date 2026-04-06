@@ -41,7 +41,7 @@ steps:
     projectKey: 'billchen247_MinimalApi'
     projectName: 'MinimalApi'
     extraProperties: |
-      sonar.coverageReportPaths=$(Agent.TempDirectory)/**/coverage.cobertura.xml
+      sonar.coverageReportPaths=$(Agent.TempDirectory)/TestResults/coverage/coverage.cobertura.xml
   condition: succeeded()  # Only run if previous steps succeed
 
 # ---------------------------
