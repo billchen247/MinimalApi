@@ -26,7 +26,7 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Run the unit tests with code coverage
-      run: dotnet coverage collect dotnet test --filter MinimalApi.Tests --output ${{ github.workspace }}/Tests/Coverage.cobertura.xml --output-format cobertura
+      run: dotnet coverage collect dotnet test --filter TodoApiTests   --output ${{ github.workspace }}/Tests/Coverage.cobertura.xml --output-format cobertura
     - name: Generate Report
       run: |
         dotnet reportgenerator -reports:${{ github.workspace }}/Tests/Coverage.cobertura.xml -targetdir:"${{ github.workspace }}/Tests/coveragereport" -reporttypes:"MarkdownSummary;Html" -assemblyfilters:+MinimalApi
