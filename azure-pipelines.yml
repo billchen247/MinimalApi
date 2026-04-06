@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'windows-latest'
 
 variables:
   solution: '**/*.sln'
@@ -29,27 +29,71 @@ steps:
     command: 'restore'
     projects: '$(solution)'
 
-# Build (REPLACES VSBuild)
-- task: DotNetCoreCLI@2
-  displayName: Build
+# ---------------------------
+# SonarCloud Prepare
+# ---------------------------
+- task: SonarCloudPrepare@4
+  displayName: 'Prepare SonarCloud Analysis'
   inputs:
-    command: 'build'
-    projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration)'
+    SonarCloud: 'sonarqubecloud'          # Your SonarCloud service connection
+    organization: 'billchen247'         # SonarCloud org key
+    scannerMode: 'dotnet'                 # Changed from MSBuild -> dotnet
+    projectKey: 'billchen247_MinimalApi'
+    projectName: 'MinimalApi'
+    extraProperties: |
+      sonar.coverageReportPaths=$(Agent.TempDirectory)/**/coverage.cobertura.xml
+  condition: succeeded()  # Only run if previous steps succeed
 
-# Test + Coverage
+# ---------------------------
+# Build & Test
+# ---------------------------
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+    
 - task: DotNetCoreCLI@2
   displayName: Test
   inputs:
     command: test
-    projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+    projects: '**/*Tests/*.csproj'
+    arguments: '--configuration Release --filter TodoApiTests  --collect:"XPlat Code Coverage"  /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura '
 
-# Publish coverage
+# ---------------------------
+# Generate Coverage Report
+# ---------------------------
+- script: |
+    dotnet tool install --global dotnet-reportgenerator-globaltool
+    echo %USERPROFILE%\.dotnet\tools >> %PATH%
+
+    reportgenerator ^
+      -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml ^
+      -targetdir:$(Build.ArtifactStagingDirectory)/CoverageReport ^
+      -reporttypes:Html
+  displayName: Generate HTML Report
+  
 - task: PublishCodeCoverageResults@2
   inputs:
     codeCoverageTool: Cobertura
     summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    reportDirectory: '$(Build.ArtifactStagingDirectory)/CoverageReport'
+  displayName: Publish Code Coverage Report
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/CoverageReport'
+    ArtifactName: 'CoverageReport'
+  displayName: Publish HTML code coverage report
+
+# ---------------------------
+# Extract Artifact Info
+# ---------------------------
+- powershell: |
+    [xml]$csproj = Get-Content "Source/MinimalApi.csproj"
+    $packageId = $csproj.Project.PropertyGroup.PackageId
+    $packageVersion = $csproj.Project.PropertyGroup.Version
 
 # Extract package info (use pwsh instead of powershell)
 - task: PowerShell@2
@@ -69,7 +113,42 @@ steps:
 
       Write-Host "##vso[task.setvariable variable=artifactFullName]$artifactFullName"
 
-# Pack NuGet
+# ---------------------------
+# Publish Symbols
+# ---------------------------
+- task: PublishSymbols@2
+  displayName: Publish symbols path
+  continueOnError: True
+  inputs:
+    SearchPattern: '**\bin\**\*.pdb'
+    PublishSymbols: false
+    SymbolServerType: TeamServices
+    
+# ---------------------------
+# Publish Build Artifacts
+# ---------------------------
+- task: PublishBuildArtifacts@1
+  displayName: Publish Artifact
+  condition: succeededOrFailed()
+  inputs:
+    PathtoPublish: $(Build.ArtifactStagingDirectory)
+    ArtifactName: $(artifactFullName)  # ✅ Includes version
+    TargetPath: '\\my\share\$(Build.DefinitionName)\$(Build.BuildNumber)_$(artifactFullName)'  # ✅ Versioned target path
+
+# ---------------------------
+# SonarCloud Analyze & Publish
+# ---------------------------
+- task: SonarCloudAnalyze@4
+  displayName: 'Run SonarCloud Analysis'
+  condition: succeeded()
+
+- task: SonarCloudPublish@4
+  displayName: 'Publish SonarCloud Results'
+  inputs:
+    pollingTimeoutSec: '300'
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))  # Skip for forked PRs
+
+# ✅ Fix: Specify output directory for .nupkg files
 - task: DotNetCoreCLI@2
   displayName: Pack
   inputs:
@@ -92,5 +171,5 @@ steps:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'internal'
-    publishVstsFeed: '8652216f-33ec-4cc4-912f-2fdda6d93168/ec7dd365-d6f2-4c11-a4e2-b5de5e9034c0'
+    publishVstsFeed: c9f2b76d-54b1-4410-b1d0-876ea67ed0ad # comp367demofeeds
 
