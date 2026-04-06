@@ -37,11 +37,12 @@ steps:
   inputs:
     SonarCloud: 'sonarqubecloud'          # Your SonarCloud service connection
     organization: 'billchen247'         # SonarCloud org key
-    scannerMode: 'dotnet'                 # Changed from MSBuild -> dotnet
+    #scannerMode: 'dotnet'                 # Changed from MSBuild -> dotnet
+    dotnetScannerVersion: 11.2.0.135473
     projectKey: 'billchen247_MinimalApi'
     projectName: 'MinimalApi'
-    extraProperties: |
-      sonar.coverageReportPaths=$(Agent.TempDirectory)/TestResults/coverage/coverage.cobertura.xml
+    #extraProperties: |
+    #  sonar.coverageReportPaths=$(Agent.TempDirectory)/TestResults/coverage/coverage.cobertura.xml
   condition: succeeded()  # Only run if previous steps succeed
 
 # ---------------------------
