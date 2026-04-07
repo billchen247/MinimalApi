@@ -6,8 +6,6 @@
 trigger:
 - main
 
-pool:
-  name: 'COMP367-Wins'
 
 variables:
   solution: '**/*.sln'
@@ -25,6 +23,8 @@ stages:
 # =========================
 - stage: CI
   displayName: 'Build & Package'
+  pool:
+    vmImage: 'windows-latest'   # 👈 Microsoft-hosted agent
   jobs:
   - job: Build
     steps:
@@ -184,6 +184,8 @@ stages:
   displayName: 'Deploy to IIS'
   dependsOn: CI
   condition: succeeded()
+  pool:
+    name: 'COMP367-Wins' # self host agent
   jobs:
   - deployment: DeployToLocalIIS   # 👈 change job → deployment
     displayName: 'Deploy to Local IIS'
