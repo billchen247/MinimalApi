@@ -11,23 +11,23 @@ pool:
 
 variables:
   solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  version: '1.0.0.$(Build.BuildId)'  # ✅ Auto-increment with Build ID
+  version: '1.0.0.$(Build.BuildId)'
 
 steps:
-- task: NuGetToolInstaller@1
 
-- task: NuGetCommand@2
+# Use .NET SDK
+- task: UseDotNet@2
   inputs:
-    restoreSolution: '$(solution)'
+    packageType: 'sdk'
+    version: '8.x'   # adjust if needed
 
+# Restore
 - task: DotNetCoreCLI@2
-  displayName: Dotnet restore
+  displayName: Restore
   inputs:
     command: 'restore'
-    projects: '**/*.csproj'
-
+    projects: '$(solution)'
 
 # ---------------------------
 # SonarCloud Prepare
@@ -56,6 +56,7 @@ steps:
     configuration: '$(buildConfiguration)'
     
 - task: DotNetCoreCLI@2
+  displayName: Test
   inputs:
     command: test
     projects: '**/*Tests/*.csproj'
@@ -95,18 +96,23 @@ steps:
     $packageId = $csproj.Project.PropertyGroup.PackageId
     $packageVersion = $csproj.Project.PropertyGroup.Version
 
-    if (-not $packageVersion) { $packageVersion = "1.0.0.$(Build.BuildId)" }  # Fallback version
-    if (-not $packageId) { $packageId = "DefaultPackageName" }  # Fallback name
+# Extract package info (use pwsh instead of powershell)
+- task: PowerShell@2
+  displayName: Extract Artifact Name
+  inputs:
+    pwsh: true
+    targetType: 'inline'
+    script: |
+      [xml]$csproj = Get-Content "Source/MinimalApi.csproj"
+      $packageId = $csproj.Project.PropertyGroup.PackageId
+      $packageVersion = $csproj.Project.PropertyGroup.Version
 
-    $artifactFullName = "$packageId" + "_" + "$packageVersion"
+      if (-not $packageVersion) { $packageVersion = "$(version)" }
+      if (-not $packageId) { $packageId = "DefaultPackageName" }
 
-    Write-Host "Package ID: $packageId"
-    Write-Host "Package Version: $packageVersion"
-    Write-Host "Artifact Name: $artifactFullName"
+      $artifactFullName = "$packageId" + "_" + "$packageVersion"
 
-    # Set variables for later steps
-    Write-Host "##vso[task.setvariable variable=artifactFullName]$artifactFullName"
-  displayName: 'Extract & Print Artifact Name and Version'
+      Write-Host "##vso[task.setvariable variable=artifactFullName]$artifactFullName"
 
 # ---------------------------
 # Publish Symbols
@@ -145,16 +151,23 @@ steps:
 
 # ✅ Fix: Specify output directory for .nupkg files
 - task: DotNetCoreCLI@2
-  displayName: Dotnet Package
+  displayName: Pack
   inputs:
     command: 'pack'
     projects: '**/*.csproj'
-    configuration: 'Release'
-    arguments: '--output $(Build.ArtifactStagingDirectory) --property:Version=$(version)'
+    configuration: '$(buildConfiguration)'
+    arguments: '--output $(Build.ArtifactStagingDirectory) /p:PackageVersion=$(version)'
 
-# ✅ Fix: Ensure .nupkg files exist before pushing
+# Publish artifacts (FIXED for Linux)
+- task: PublishBuildArtifacts@1
+  displayName: Publish Artifact
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: '$(artifactFullName)'
+
+# Push NuGet
 - task: NuGetCommand@2
-  displayName: Push the nuget package to Feeds
+  displayName: Push package
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
