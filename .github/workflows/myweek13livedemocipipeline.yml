@@ -31,7 +31,7 @@ jobs:
           /o:"billchen247" \
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
           /d:sonar.host.url="https://sonarcloud.io" \
-          /d:sonar.cs.cobertura.reportsPaths="${{ github.workspace }}/Tests/Coverage.cobertura.xml"
+          /d:sonar.cs.cobertura.reportsPaths="${{ github.workspace }}/Tests/Coverage.cobertura.xml" \
           /d:sonar.projectBaseDir="${{ github.workspace }}"
 
     - name: Restore dependencies
