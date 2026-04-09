@@ -25,6 +25,22 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
+    - name: Install Required Tools
+      run: |
+        dotnet new tool-manifest
+        dotnet tool install dotnet-reportgenerator-globaltool
+        dotnet tool install dotnet-coverage
+    - name: Run the unit tests with code coverage
+      run: dotnet coverage collect dotnet test --filter TodoApiTests --output ${{ github.workspace }}/Tests/Coverage.cobertura.xml --output-format cobertura
+    - name: Generate Report
+      run: |
+        dotnet reportgenerator -reports:${{ github.workspace }}/Tests/Coverage.cobertura.xml -targetdir:"${{ github.workspace }}/Tests/coveragereport" -reporttypes:"MarkdownSummary;Html" -assemblyfilters:+MinimalApi
+    - name: Upload code coverage report
+      uses: actions/upload-artifact@v4.6.0
+      with:
+        name: coveragereport
+        path: ${{ github.workspace }}/Tests/coveragereport
+        
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.6.2
       with:
