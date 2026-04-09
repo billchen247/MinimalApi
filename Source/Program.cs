@@ -1,7 +1,5 @@
 
 
-
-
 var builder = WebApplication.CreateBuilder(args);
 var jwtPolicyName = "jwt";
 
@@ -187,11 +185,6 @@ app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.Run();
-
-//For integration testing
-public partial class Program { }
 
 app.Run();
 
