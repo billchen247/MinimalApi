@@ -82,12 +82,8 @@ builder.Services.AddApiVersioning(options =>
     options.ApiVersionReader = new HeaderApiVersionReader("api-version");
 });
 
-// 👇 Only enable auth if NOT testing
-if (!builder.Environment.IsEnvironment("Testing"))
-{
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication("Bearer").AddJwtBearer();
-}
 builder.Services.AddDbContextFactory<TodoDbContext>(options => options.UseInMemoryDatabase($"MinimalApiDb-{Guid.NewGuid()}"));
 
 builder.Services.AddEndpointsApiExplorer();
@@ -154,15 +150,10 @@ if (databaseContext != null)
     databaseContext.Database.EnsureCreated();
 }
 
-var todos = app.MapGroup("/todoitems");
-
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    todos.RequireAuthorization();
-}
-
-todos.MapApiEndpoints()
+app.MapGroup("/todoitems")
+    .MapApiEndpoints()
     .WithTags("Todo Items")
+    .RequireAuthorization()
     .RequireRateLimiting(jwtPolicyName)
     .WithOpenApi()
     .WithMetadata()
@@ -192,24 +183,8 @@ app.MapGet("/health", async (HealthCheckService healthCheckService) =>
 
 app.UseRouting();
 app.UseRateLimiter();
-// 👇 Only use auth middleware if NOT testing
-if (app.Environment.IsEnvironment("Testing"))
-{
-    app.Use(async (context, next) =>
-    {
-        // Inject a fake authenticated user
-        var claims = new[] { new Claim(ClaimTypes.Name, "TestUser") };
-        var identity = new ClaimsIdentity(claims, "FakeAuth");
-        context.User = new ClaimsPrincipal(identity);
-
-        await next();
-    });
-}
-else
-{
 app.UseAuthentication();
 app.UseAuthorization();
-}
 
 app.Run();
 
