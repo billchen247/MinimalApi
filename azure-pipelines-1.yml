@@ -201,7 +201,7 @@ stages:
           - task: DownloadPipelineArtifact@2
             displayName: 'Download pipeline artifact'
             inputs:
-              artifact: '$(artifactName)'
+              artifact: '$(artifactName)_${version}'
               path: '$(Pipeline.Workspace)/$(artifactName)'
       
           # Pre-check: create IIS site if missing
