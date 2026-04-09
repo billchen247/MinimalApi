@@ -135,16 +135,16 @@ stages:
         PublishSymbols: false
         SymbolServerType: TeamServices
         
+
     # ---------------------------
-    # Publish Build Artifacts
+    # Publish Pipeline Artifact
     # ---------------------------
-    - task: PublishBuildArtifacts@1
-      displayName: Publish Artifact
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Pipeline Artifact
       condition: succeededOrFailed()
       inputs:
-        PathtoPublish: $(Build.ArtifactStagingDirectory)
-        ArtifactName: $(artifactFullName)  # ✅ Includes version
-        TargetPath: '\\my\share\$(Build.DefinitionName)\$(Build.BuildNumber)_$(artifactFullName)'  # ✅ Versioned target path
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifact: $(artifactFullName)    # ✅ Includes version
 
     # ---------------------------
     # SonarCloud Analyze & Publish
@@ -201,7 +201,7 @@ stages:
           - task: DownloadPipelineArtifact@2
             displayName: 'Download pipeline artifact'
             inputs:
-              artifact: '$(artifactName)'
+              artifact: '$(artifactFullName)'
               path: '$(Pipeline.Workspace)/$(artifactName)'
       
           # Pre-check: create IIS site if missing
